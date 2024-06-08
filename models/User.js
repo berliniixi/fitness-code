@@ -1,5 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // NAME VALIDATION
 const minNameLengthRegex = /.{3,}/; // At least 3 characters
@@ -58,17 +60,18 @@ const phoneNumberRegex = /^[0-9]{8}$/;
 const noLettersRegex = /^[^A-Za-z]+$/; // Matches strings with no alphabetic characters
 const validatePhone = [
   {
-    validator: function(value) {
-      return noLettersRegex.test(value)
+    validator: function (value) {
+      return noLettersRegex.test(value);
     },
-    message: 'Invalid phone number format. Field must not contain any alphabetic characters.'
+    message:
+      "Invalid phone number format. Field must not contain any alphabetic characters.",
   },
   {
     validator: function (value) {
       return phoneNumberRegex.test(value);
     },
     message: "Invalid phone number format. Phone number must be 8 digit",
-  }
+  },
 ];
 
 // PASSWORD VALIDATION
@@ -164,18 +167,31 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-UserSchema.pre("save", function (next) {
+UserSchema.pre("save", async function () {
   this.name = validator.trim(this.name);
-  this.surname = validator.trim(this.surname);  
+  this.surname = validator.trim(this.surname);
   this.email = validator.trim(this.email);
-  this.phone = validator.trim(this.phone)
+  this.phone = validator.trim(this.phone);
+
   if (this.email && this.email.includes("@gmail.com")) {
     this.email = validator.normalizeEmail(this.email, {
       gmail_remove_dots: false,
     });
   }
-  next();
+
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
+
+UserSchema.methods.createJWT = function () {
+  return jwt.sign({ userId: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_LIFETIME,
+  });
+};
+
+UserSchema.methods.comparePassword = async function (candidatePassword) {
+  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+  return isMatch;
+};
 
 module.exports = mongoose.model("User", UserSchema);
