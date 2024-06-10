@@ -12,13 +12,11 @@ const connectToDB = require("./db/connect");
 const uri = process.env.URI;
 const db_name = process.env.DB_NAME;
 const url = `${uri}/${db_name}`;
-
 // extra packages
 app.use(express.json());
 
 // routes
 app.use("/api/v1/auth", authRoute);
-
 
 const port = process.env.PORT || 3000;
 
