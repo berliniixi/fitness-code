@@ -166,7 +166,7 @@ const resetPassword = async (req, res) => {
   if (!req.body.token || !req.body.newPassword) {
     return res
       .status(StatusCodes.BAD_REQUEST)
-      .json({ success: false, error: "Token and new password are required." });
+      .json({ success: false, error: "New password is a required field." });
   }
 
   try {
