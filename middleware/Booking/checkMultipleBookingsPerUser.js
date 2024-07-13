@@ -1,5 +1,6 @@
 const Calendar = require("../../models/Calendar");
 const { StatusCodes } = require("http-status-codes");
+const formattedDate = require("../../utils/dates/formatDate");
 const getStartAndEndDate = require("../../utils/dates/getStartAndEndDate");
 
 const checkMultipleBookingsPerUser = async (req, res, next) => {
@@ -16,8 +17,10 @@ const checkMultipleBookingsPerUser = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: [
-          `You already booked a session for ${req.body.bookDate}`,
-          `Your session starts at ${req.body.bookStartAt}`,
+          `You already booked a session for ${formattedDate(
+            isUserBooked.bookDate
+          )}`,
+          `Your session starts at ${isUserBooked.bookStartAt}`,
           "User can't have more than one session booked at day.",
         ],
       });

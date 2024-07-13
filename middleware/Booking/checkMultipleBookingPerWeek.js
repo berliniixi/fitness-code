@@ -4,7 +4,11 @@ const getFirstAndLastDayOfWeek = require("../../utils/dates/getFirstAndLastDayOf
 
 const checkMultipleBookingsPerWeek = async (req, res, next) => {
   try {
-    const { startOfWeek, endOfWeek } = getFirstAndLastDayOfWeek(req.body.bookDate);
+    const { startOfWeek, endOfWeek } = getFirstAndLastDayOfWeek(
+      req.body.bookDate
+    );
+
+    const bookingSessionId = req.params.id;
 
     const date = new Date(req.body.bookDate);
 
@@ -21,12 +25,13 @@ const checkMultipleBookingsPerWeek = async (req, res, next) => {
       });
     }
 
-    const bookingCount = await Calendar.countDocuments({
+    const weeklyBookings = await Calendar.countDocuments({
       bookedBy: req.user.userId,
       bookDate: { $gte: startOfWeek, $lte: endOfWeek },
+      _id: { $ne: bookingSessionId }, // Exclude the current booking session
     });
 
-    if (bookingCount >= 3) {
+    if (weeklyBookings >= 3) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         error: [
