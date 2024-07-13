@@ -9,7 +9,7 @@ const auth = (req, res, next) => {
   if (!authHeaders || !authHeaders.startsWith("Bearer ")) {
     res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: "Authentication invalid.",
+      message: "Invalid Authentication.",
     });
   }
 
@@ -21,7 +21,7 @@ const auth = (req, res, next) => {
   } catch (error) {
     res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: "Authentication invalid.",
+      message: "Invalid Authentication.",
     });
   }
 
