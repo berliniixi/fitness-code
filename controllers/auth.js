@@ -33,6 +33,8 @@ const signUp = async (req, res) => {
 
     const token = user.createJWT();
 
+    // TODO: make a verification through email
+
     res.status(StatusCodes.CREATED).json({ success: true, token });
   } catch (error) {
     if (error.name === "ValidationError") {
@@ -141,7 +143,7 @@ const requestResetPassword = async (req, res) => {
       subject: "Request Password Reset",
       text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n
       Please click on the following link, or paste this into your browser to complete the process:\n\n
-      https://${req.headers.host}/api/v1/auth/reset-password/${token}\n\n
+      https://${req.headers.host}/api/v1/auth/reset-password?token=${token}\n\n
       If you did not request this, please ignore this email and your password will remain unchanged.\n`,
     };
 
@@ -163,7 +165,7 @@ const requestResetPassword = async (req, res) => {
 };
 
 const resetPassword = async (req, res) => {
-  if (!req.body.token || !req.body.newPassword) {
+  if (!req.query.token || !req.body.newPassword) {
     return res
       .status(StatusCodes.BAD_REQUEST)
       .json({ success: false, error: "New password is a required field." });
@@ -171,7 +173,7 @@ const resetPassword = async (req, res) => {
 
   try {
     const user = await User.findOne({
-      resetPasswordToken: req.body.token,
+      resetPasswordToken: req.query.token,
       resetPasswordExpires: { $gt: Date.now() },
     });
 
