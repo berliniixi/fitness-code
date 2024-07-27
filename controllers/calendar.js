@@ -24,7 +24,6 @@ const bookSession = async (req, res) => {
       booking,
     });
   } catch (error) {
-    console.log(error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -66,7 +65,6 @@ const updateBookedSession = async (req, res) => {
 
     res.status(StatusCodes.OK).json({ success: true, updatedBooking });
   } catch (error) {
-    console.log(error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -86,7 +84,6 @@ const deleteBookedSession = async (req, res) => {
   try {
     const existingBooking = await Calendar.findOne({ _id: bookingSessionId });
 
-    console.log("existingBooking: ", existingBooking);
     if (!existingBooking) {
       return res
         .status(StatusCodes.BAD_REQUEST)
@@ -113,7 +110,6 @@ const deleteBookedSession = async (req, res) => {
       } ${existingBooking.bookStartAt} deleted successfully.`,
     });
   } catch (error) {
-    console.log("from here", error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -155,7 +151,6 @@ const getByUserBookedSessions = async (req, res) => {
     const user = await User.findOne({ _id: req.params.userId });
     const userBookedSessions = await getBookedSessions(req.params.userId);
 
-    console.log("userBookedSessions: ", userBookedSessions);
 
     if (!user) {
       return res.status(StatusCodes.BAD_REQUEST).json({

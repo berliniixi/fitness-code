@@ -59,7 +59,6 @@ const isUpdatingTheSameSession = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log(error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ success: false, error: error.message });
