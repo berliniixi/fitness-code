@@ -9,10 +9,10 @@ const checkMultipleBookingsPerHour = async (req, res, next) => {
     });
 
     // bookSessionPerHourCount must became 5
-    if (bookSessionPerHourCount >= 2) {
+    if (bookSessionPerHourCount >= 3) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: [
+        errors: [
           `Maximum number of bookings reached for ${req.body.bookStartAt} on ${req.body.bookDate}`,
           "Try booking a session at a different date or time.",
         ],

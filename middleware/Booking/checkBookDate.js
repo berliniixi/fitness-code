@@ -5,7 +5,7 @@ const isBookDatePresent = (req, res, next) => {
     if (!req.body.bookDate) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: [
+        errors: [
           "Book date is required field.",
           "Please provide date you want to book a session.",
         ],

@@ -2,14 +2,14 @@ const User = require("../models/User");
 const { StatusCodes } = require("http-status-codes");
 const jwt = require("jsonwebtoken");
 
-const auth = (req, res, next) => {
+const auth = async (req, res, next) => {
   // check headers
   const authHeaders = req.headers.authorization;
 
   if (!authHeaders || !authHeaders.startsWith("Bearer ")) {
-    res.status(StatusCodes.UNAUTHORIZED).json({
+    return res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: "Invalid Authentication.",
+      errors: ["Authorization header is missing or invalid."],
     });
   }
 
@@ -17,11 +17,20 @@ const auth = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = { userId: payload.userId };
+
+    const user = await User.findById({ _id: payload.userId });
+
+    req.user = {
+      userId: payload.userId,
+      username: user.name,
+      surname: user.surname,
+      issuedAt: payload.iat,
+      expiredAt: payload.exp,
+    };
   } catch (error) {
-    res.status(StatusCodes.UNAUTHORIZED).json({
+    return res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: "Invalid Authentication.",
+      errors: ["Invalid Authentication."],
     });
   }
 

@@ -5,7 +5,7 @@ const formattedTime = require("../utils/dates/formatTime");
 const getBookedSessions = require("../utils/findBookedSessionPerUser");
 
 const bookSession = async (req, res) => {
-  const userId = req.user.userId; // Assuming user is authenticated and user ID is available in req.user
+  const user = req.user; // Assuming user is authenticated and user ID is available in req.user
 
   try {
     // Create booking
@@ -13,7 +13,11 @@ const bookSession = async (req, res) => {
       bookDate: new Date(req.body.bookDate),
       bookStartAt: req.body.bookStartAt,
       message: req.body.message,
-      bookedBy: userId,
+      bookedBy: {
+        userId: user.userId,
+        name: user.username,
+        surname: user.surname,
+      },
     });
 
     await booking.save();
@@ -24,7 +28,6 @@ const bookSession = async (req, res) => {
       booking,
     });
   } catch (error) {
-    console.log(error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -33,7 +36,7 @@ const bookSession = async (req, res) => {
     }
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error: error });
+      .json({ success: false, errors: errors });
   }
 };
 
@@ -53,7 +56,7 @@ const updateBookedSession = async (req, res) => {
 
   try {
     const updatedBooking = await Calendar.findByIdAndUpdate(
-      { _id: bookingSessionId, bookedBy: userId },
+      { _id: bookingSessionId, "bookedBy.userId": { $eq: userId } },
       { ...req.body, bookFinishAt: req.body.bookFinishAt },
       { new: true, runValidators: true }
     );
@@ -61,12 +64,11 @@ const updateBookedSession = async (req, res) => {
     if (!updatedBooking) {
       res
         .status(StatusCodes.OK)
-        .json({ success: false, error: ["There is not booked session"] });
+        .json({ success: false, errors: ["There is not booked session"] });
     }
 
     res.status(StatusCodes.OK).json({ success: true, updatedBooking });
   } catch (error) {
-    console.log(error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -75,35 +77,34 @@ const updateBookedSession = async (req, res) => {
     }
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error });
+      .json({ success: false, errors });
   }
 };
 
 const deleteBookedSession = async (req, res) => {
   const bookingSessionId = req.params.id;
-  const userId = req.user.userId; // Assuming user ID is stored in req.user
+  const user = req.user; // Assuming user ID is stored in req.user
 
   try {
     const existingBooking = await Calendar.findOne({ _id: bookingSessionId });
 
-    console.log("existingBooking: ", existingBooking);
     if (!existingBooking) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, error: ["Couldn't find the booked session"] });
+        .json({ success: false, errors: ["Couldn't find the booked session"] });
     }
 
     // Check if the user making the request is the same as the one who created the booking
-    if (existingBooking.bookedBy.toString() !== userId) {
+    if (existingBooking.bookedBy.userId.toString() !== user.userId) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
-        error: ["You are not authorized to delete this booking"],
+        errors: ["You are not authorized to delete this booking"],
       });
     }
 
     await Calendar.findOneAndDelete({
       _id: bookingSessionId,
-      bookedBy: userId,
+      "bookedBy.userId": { $eq: user.userId },
     });
 
     res.status(StatusCodes.OK).json({
@@ -113,7 +114,6 @@ const deleteBookedSession = async (req, res) => {
       } ${existingBooking.bookStartAt} deleted successfully.`,
     });
   } catch (error) {
-    console.log("from here", error);
     if (error.name === "ValidationError") {
       const errors = Object.values(error.errors).map((err) => err.message);
       return res
@@ -131,7 +131,7 @@ const deleteBookedSession = async (req, res) => {
     }
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error });
+      .json({ success: false, error: errors });
   }
 };
 
@@ -143,31 +143,35 @@ const getAllBookedSessions = async (req, res) => {
       bookedSessions,
       length: bookedSessions.length,
     });
-  } catch (error) {
+  } catch (errors) {
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error });
+      .json({ success: false, errors });
   }
 };
 
 const getByUserBookedSessions = async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.params.userId });
-    const userBookedSessions = await getBookedSessions(req.params.userId);
+    const userId = req.params.userId;
+
+    const doesUserIdExists = await User.findById(userId);
+
+    console.log("doesUserIdExists: ", doesUserIdExists);
+
+    if (!doesUserIdExists) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        errors: ["User does not exists"],
+      });
+    }
+    const userBookedSessions = await getBookedSessions(userId);
 
     console.log("userBookedSessions: ", userBookedSessions);
 
-    if (!user) {
+    if (userBookedSessions.length === 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: ["User does not exists"],
-      });
-    }
-
-    if (!userBookedSessions) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        error: ["Requested users booked sessions couldn't be found."],
+        errors: ["Requested users booked sessions couldn't be found."],
         length: userBookedSessions.length,
       });
     }
@@ -177,16 +181,16 @@ const getByUserBookedSessions = async (req, res) => {
       userBookedSessions,
       length: userBookedSessions.length,
     });
-  } catch (error) {
-    if (error.name === "CastError") {
+  } catch (errors) {
+    if (errors.name === "CastError") {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        errors: [`Couldn't find such an ${req.params.userId}.`],
+        errors: [`Couldn't find such a user id ${req.params.userId}.`],
       });
     }
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error });
+      .json({ success: false, errors });
   }
 };
 

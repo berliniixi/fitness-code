@@ -6,24 +6,24 @@ const areTimesEqual = require("../../utils/dates/areTimesEqual");
 
 const isUpdatingTheSameSession = async (req, res, next) => {
   const bookingSessionId = req.params.id;
-  const userId = req.user.userId; // Assuming user ID is stored in req.user
+  const user = req.user; // Assuming user ID is stored in req.user
 
   try {
     // Fetch the existing booking from the database
     const existingBooking = await Calendar.findOne({ _id: bookingSessionId });
-    const userBookedSessions = await getBookedSessions(req.user.userId);
+    const userBookedSessions = await getBookedSessions(user.userId);
 
     if (!existingBooking) {
       return res
         .status(StatusCodes.NOT_FOUND)
-        .json({ success: false, error: "Booking not found" });
+        .json({ success: false, errors: ["Booking not found"] });
     }
 
     // Check if the user making the request is the same as the one who created the booking
-    if (existingBooking.bookedBy.toString() !== userId) {
+    if (existingBooking.bookedBy.userId.toString() !== user.userId) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
-        error: ["You are not authorized to update this booking"],
+        errors: ["You are not authorized to update this booking"],
       });
     }
 
@@ -35,7 +35,7 @@ const isUpdatingTheSameSession = async (req, res, next) => {
     ) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: [
+        errors: [
           "You are attempting to update the booking with the same date and time.",
         ],
       });
@@ -50,7 +50,7 @@ const isUpdatingTheSameSession = async (req, res, next) => {
       ) {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
-          error: [
+          errors: [
             "You are attempting to update the booking to a day that already has a booked session.",
           ],
         });
@@ -59,10 +59,9 @@ const isUpdatingTheSameSession = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log(error);
     res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ success: false, error: error.message });
+      .json({ success: false, errors: [error.message] });
   }
 };
 

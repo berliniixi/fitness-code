@@ -11,14 +11,15 @@ const isUserActive = async (req, res, next) => {
     if (!user.active) {
       return res.status(StatusCodes.FORBIDDEN).json({
         success: false,
-        error:
+        errors: [
           "User is not activated. Please activate your user account to book a session.",
+        ],
       });
     }
   } catch (error) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ error: error.message });
+      .json({ errors: ["Something went wrong"] });
   }
   next();
 };
