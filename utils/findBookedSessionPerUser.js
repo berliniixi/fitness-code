@@ -3,10 +3,10 @@ const Calendar = require("../models/Calendar");
 const getBookedSessions = async (userId) => {
   try {
     const query = {
-      bookedBy: userId,
+      "bookedBy.userId": { $eq: userId },
     };
 
-    const bookedSessions = await Calendar.find(query)
+    const bookedSessions = await Calendar.find(query);
 
     return bookedSessions;
   } catch (error) {
