@@ -48,5 +48,5 @@ router.delete("/delete/:id", deleteBookedSession);
 router.get("/get-all", getAllBookedSessions);
 
 // Get all booked sessions from a user
-router.get("/get-all/:userId", getByUserBookedSessions);
+router.get("/get-all-by/:userId", getByUserBookedSessions);
 module.exports = router;
