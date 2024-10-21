@@ -12,17 +12,17 @@ const signUp = async (req, res) => {
     }).exec();
 
     if (storedUserInfo) {
-      const messages = [];
+      const errors = [];
       if (storedUserInfo.email === req.body.email) {
-        messages.push(`User with email '${req.body.email}' already exists.`);
+        errors.push(`User with email '${req.body.email}' already exists.`);
       }
       if (storedUserInfo.phone === req.body.phone) {
-        messages.push(`User with phone '${req.body.phone}' already exists.`);
+        errors.push(`User with phone '${req.body.phone}' already exists.`);
       }
 
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: messages,
+        errors,
       });
     }
 
@@ -47,45 +47,48 @@ const signUp = async (req, res) => {
 };
 
 const signIn = async (req, res) => {
-  const messages = [];
+  const errors = [];
 
   if (!req.body.email || !req.body.password) {
     if (!req.body.email) {
-      messages.push("Email is a required field. Please provide an email.");
+      errors.push("Email is a required field. Please provide an email.");
     }
     if (!req.body.password) {
-      messages.push("Password is a required field. Please provide a password.");
+      errors.push("Password is a required field. Please provide a password.");
     }
 
     return res.status(StatusCodes.BAD_REQUEST).json({
       success: false,
-      message: messages,
+      errors,
     });
   }
 
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    messages.push("Invalid credential. User doesn't exists.");
+    errors.push("Invalid credential. User doesn't exists.");
 
     return res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: messages,
+      errors,
     });
   }
 
   const isPasswordCorrect = await user.comparePassword(req.body.password);
 
   if (!isPasswordCorrect) {
-    messages.push("Invalid credential. Password is invalid.");
+    errors.push("Invalid credential. Password is invalid.");
 
     return res.status(StatusCodes.UNAUTHORIZED).json({
       success: false,
-      message: messages,
+      errors,
     });
   }
 
   const token = user.createJWT();
+
+  // Set the token in response headers
+  res.setHeader("Authorization", `Bearer ${token}`);
 
   res.status(StatusCodes.OK).json({
     success: true,
@@ -109,7 +112,7 @@ const requestResetPassword = async (req, res) => {
   if (!req.body.email) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       success: false,
-      error: "Email is required field. Please provide an email.",
+      errors: ["Email is required field. Please provide an email."],
     });
   }
 
@@ -117,9 +120,10 @@ const requestResetPassword = async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) {
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ success: false, error: "User with this email does not exist" });
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        errors: ["User with this email does not exist"],
+      });
     }
 
     // Generate a secure token
@@ -168,7 +172,7 @@ const resetPassword = async (req, res) => {
   if (!req.query.token || !req.body.newPassword) {
     return res
       .status(StatusCodes.BAD_REQUEST)
-      .json({ success: false, error: "New password is a required field." });
+      .json({ success: false, errors: ["New password is a required field."] });
   }
 
   try {
@@ -180,7 +184,7 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: "Token has expired. Please request a new reset link.",
+        errors: ["Token has expired. Please request a new reset link."],
       });
     }
 

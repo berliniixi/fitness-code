@@ -10,7 +10,7 @@ const requestResetPasswordLimiter = createRateLimiter({
   handler: (req, res) => {
     return res.status(StatusCodes.TOO_MANY_REQUESTS).json({
       success: false,
-      message: "Too many requests, please try again in 5 minutes.",
+      errors: ["Too many requests, please try again in 5 minutes."],
     });
   },
 });
@@ -22,7 +22,7 @@ const loginPasswordLimiter = createRateLimiter({
   handler: (req, res) => {
     return res.status(StatusCodes.TOO_MANY_REQUESTS).json({
       success: false,
-      message: "Too many requests, please try again in 1 hour.",
+      errors: ["Too many requests, please try again in 1 hour."],
     });
   },
 });

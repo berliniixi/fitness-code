@@ -18,7 +18,7 @@ const checkMultipleBookingsPerWeek = async (req, res, next) => {
     if (dayOfWeek === 6 || dayOfWeek === 0) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: [
+        errors: [
           "Bookings on Saturdays and Sundays are not allowed.",
           "Please book session in working days.",
         ],
@@ -26,7 +26,7 @@ const checkMultipleBookingsPerWeek = async (req, res, next) => {
     }
 
     const weeklyBookings = await Calendar.countDocuments({
-      bookedBy: req.user.userId,
+      "bookedBy.userId": { $eq: req.user.userId },
       bookDate: { $gte: startOfWeek, $lte: endOfWeek },
       _id: { $ne: bookingSessionId }, // Exclude the current booking session
     });
@@ -34,7 +34,7 @@ const checkMultipleBookingsPerWeek = async (req, res, next) => {
     if (weeklyBookings >= 3) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        error: [
+        errors: [
           "You already booked 3 sessions for this week.",
           "Try book other sessions in the upcoming week",
         ],
@@ -43,7 +43,7 @@ const checkMultipleBookingsPerWeek = async (req, res, next) => {
   } catch (error) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ error: error.message });
+      .json({ errors: [error.message] });
   }
   next();
 };
