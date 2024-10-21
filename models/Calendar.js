@@ -82,9 +82,19 @@ const CalendarSchema = new mongoose.Schema(
       validate: validateMessage,
     },
     bookedBy: {
-      type: mongoose.Types.ObjectId,
-      ref: "User", //which model we referencing, in our case because it created by user we set the "ref": 'User
-      require: [true, "Please provide user."],
+      userId: {
+        type: mongoose.Types.ObjectId,
+        ref: "User",
+        required: [true, "Please provide user ID."],
+      },
+      name: {
+        type: String,
+        required: [true, "Please provide user name."],
+      },
+      surname: {
+        type: String,
+        required: [true, "Please provide user surname."],
+      },
     },
   },
   { timestamps: true }
